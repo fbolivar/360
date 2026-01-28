@@ -5,7 +5,7 @@ import {
   Database,
   AlertTriangle,
   TrendingUp,
-  Map,
+  Map as MapIcon,
   Activity
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
@@ -23,6 +23,8 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { useEffect } from "react";
+import { useDashboardStore } from "@/features/dashboard/store/useDashboardStore";
 
 const dataRiesgo = [
   { name: 'Monitoreo', riesgo: 45 },
@@ -33,12 +35,12 @@ const dataRiesgo = [
 ];
 
 const dataTendencia = [
-  { fecha: 'Ene', valor: 400 },
-  { fecha: 'Feb', valor: 300 },
-  { fecha: 'Mar', valor: 600 },
-  { fecha: 'Abr', valor: 800 },
-  { fecha: 'May', valor: 500 },
-  { fecha: 'Jun', valor: 700 },
+  { fecha: 'Ene', valor: 20 },
+  { fecha: 'Feb', valor: 35 },
+  { fecha: 'Mar', valor: 45 },
+  { fecha: 'Abr', valor: 30 },
+  { fecha: 'May', valor: 55 },
+  { fecha: 'Jun', valor: 40 },
 ];
 
 const dataIncidentes = [
@@ -51,6 +53,24 @@ const dataIncidentes = [
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
 export default function DashboardPage() {
+  const { stats, loading, fetchStats } = useDashboardStore();
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  if (loading && !stats) return <div className="p-20 text-center animate-pulse text-muted-foreground">Cargando visión estratégica global...</div>;
+
+  const displayStats = stats || {
+    totalAssets: 0,
+    criticalAssets: 0,
+    openVulnerabilities: 0,
+    activeIncidents: 0,
+    highPriorityIncidents: 0,
+    recentIncidents: [],
+    avgRisk: 0
+  };
+
   return (
     <div className="space-y-10">
       <header className="flex justify-between items-end">
@@ -68,32 +88,32 @@ export default function DashboardPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Activos Críticos"
-          value="142"
-          sub="85% Protegidos"
+          title="Activos Registrados"
+          value={displayStats.totalAssets.toLocaleString()}
+          sub={`${displayStats.criticalAssets} de criticidad alta`}
           icon={Database}
           color="text-primary"
         />
         <KPICard
           title="Vulnerabilidades"
-          value="2,481"
-          sub="+12% esta semana"
+          value={displayStats.openVulnerabilities.toLocaleString()}
+          sub="Pendientes de mitigación"
           icon={ShieldAlert}
           color="text-amber-500"
         />
         <KPICard
           title="Incidentes Activos"
-          value="12"
-          sub="4 Prioridad Alta"
+          value={displayStats.activeIncidents}
+          sub={`${displayStats.highPriorityIncidents} prioridad crítica`}
           icon={AlertTriangle}
           color="text-rose-500"
         />
         <KPICard
-          title="Nivel de Riesgo"
-          value="Bajo (2.4)"
-          sub="Residual Mensual"
+          title="Postura de Riesgo"
+          value={`${displayStats.avgRisk >= 4 ? 'Alto' : displayStats.avgRisk >= 2.5 ? 'Medio' : 'Bajo'} (${displayStats.avgRisk})`}
+          sub="Basado en impacto misional"
           icon={TrendingUp}
-          color="text-emerald-500"
+          color={displayStats.avgRisk >= 4 ? "text-rose-500" : displayStats.avgRisk >= 2.5 ? "text-amber-500" : "text-emerald-500"}
         />
       </div>
 
@@ -101,7 +121,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-card p-8 rounded-xl border">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" /> Riesgo por Proceso Misional
+            <TrendingUp className="w-5 h-5 text-primary" /> Riesgo por Proceso Misional (Referencial)
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -121,7 +141,7 @@ export default function DashboardPage() {
 
         <div className="bg-card p-8 rounded-xl border">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" /> Tendencia de Eventos
+            <Activity className="w-5 h-5 text-primary" /> Tendencia Histórica de Amenazas
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -142,29 +162,27 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-card p-8 rounded-xl border">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <Map className="w-5 h-5 text-primary" /> Incidentes Recientes con Impacto Misional
+            <MapIcon className="w-5 h-5 text-primary" /> Incidentes Recientes en territorio
           </h3>
           <div className="space-y-4">
-            <IncidentItem
-              title="Indisponibilidad Sistema de Monitoreo - PNN Chingaza"
-              severity="CRITICA"
-              time="Hace 2 horas"
-            />
-            <IncidentItem
-              title="Detección de Phisihing - Territorial Pacífico"
-              severity="ALTA"
-              time="Hace 5 horas"
-            />
-            <IncidentItem
-              title="Falla de Enlace Satelital - PNN Los Nevados"
-              severity="MEDIA"
-              time="Hace 1 día"
-            />
+            {displayStats.recentIncidents.length === 0 ? (
+              <p className="text-center py-10 text-muted-foreground outline-dashed outline-1 rounded-lg">No hay incidentes reportados recientemente.</p>
+            ) : (
+              displayStats.recentIncidents.map((incident: any) => (
+                <IncidentItem
+                  key={incident.id}
+                  title={incident.title}
+                  severity={incident.severity}
+                  time={new Date(incident.detectedAt).toLocaleDateString()}
+                  assetName={incident.asset?.name}
+                />
+              ))
+            )}
           </div>
         </div>
 
         <div className="bg-card p-8 rounded-xl border flex flex-col">
-          <h3 className="text-lg font-semibold mb-6">Tipos de Incidentes</h3>
+          <h3 className="text-lg font-semibold mb-6">Distribución de Alertas</h3>
           <div className="flex-1 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -205,14 +223,14 @@ function KPICard({ title, value, sub, icon: Icon, color }: any) {
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider text-[10px] font-bold">{title}</p>
       <h4 className="text-2xl font-bold mt-1 group-hover:text-primary transition-colors">{value}</h4>
       <p className="text-xs text-muted-foreground mt-1">{sub}</p>
     </div>
   );
 }
 
-function IncidentItem({ title, severity, time }: any) {
+function IncidentItem({ title, severity, time, assetName }: any) {
   return (
     <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-transparent hover:border-border transition-all cursor-default">
       <div className="flex items-center gap-4">
@@ -223,7 +241,10 @@ function IncidentItem({ title, severity, time }: any) {
         )} />
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{time}</p>
+          <div className="flex gap-2 items-center mt-1">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{time}</p>
+            {assetName && <span className="text-[10px] text-primary font-bold px-1.5 bg-primary/10 rounded">{assetName}</span>}
+          </div>
         </div>
       </div>
       <span className={cn(
@@ -237,3 +258,4 @@ function IncidentItem({ title, severity, time }: any) {
     </div>
   );
 }
+

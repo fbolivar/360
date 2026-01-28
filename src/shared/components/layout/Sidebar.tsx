@@ -21,7 +21,8 @@ const menuItems = [
     { icon: ShieldAlert, label: "Vulnerabilidades", href: "/vulnerabilities" },
     { icon: AlertTriangle, label: "Incidentes", href: "/incidents" },
     { icon: ShieldCheck, label: "Controles", href: "/controls" },
-    { icon: FileText, label: "Auditoría", href: "/audit" },
+    { icon: FileText, label: "Reportes", href: "/reports" },
+    { icon: ShieldCheck, label: "Auditoría", href: "/audit" },
 ];
 
 export function Sidebar() {
