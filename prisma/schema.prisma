@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN_TIC
+  ANALISTA_SOC
+  RESPONSABLE_RIESGO
+  AUDITOR_INTERNO
+  DIRECTIVO
+}
+
+enum ClassificationLevel {
+  PUBLICA
+  USO_INTERNO
+  RESTRINGIDA
+}
+
+enum AssetType {
+  SERVIDOR
+  APLICATIVO
+  RED
+  RADIO
+  ESTACION
+  SIG
+  USUARIO
+  OTRO
+}
+
+enum VulnerabilityStatus {
+  ABIERTA
+  MITIGADA
+  ACEPTADA
+}
+
+enum IncidentSeverity {
+  BAJA
+  MEDIA
+  ALTA
+  CRITICA
+}
+
+enum ControlMaturity {
+  INEXISTENTE
+  INICIAL
+  REPETIBLE
+  DEFINIDO
+  GESTIONADO
+  OPTIMIZADO
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  fullName  String?
+  role      UserRole @default(RESPONSABLE_RIESGO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assetsOwned Asset[]
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model Asset {
+  id              String              @id @default(uuid())
+  name            String
+  description     String?
+  type            AssetType
+  criticality     Int
+  confidentiality Int
+  integrity       Int
+  availability    Int
+  classification  ClassificationLevel @default(USO_INTERNO)
+  
+  ownerId         String?
+  owner           User?               @relation(fields: [ownerId], references: [id])
+  
+  location        String?
+
+  vulnerabilities Vulnerability[]
+  incidents       Incident[]
+  controls        AssetControl[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("assets")
+}
+
+model Vulnerability {
+  id                 String              @id @default(uuid())
+  cve                String?
+  description        String
+  severity           Float?
+  status             VulnerabilityStatus @default(ABIERTA)
+  detectedAt         DateTime            @default(now())
+  mitigationDeadline DateTime?
+  mitigatedAt        DateTime?
+
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@map("vulnerabilities")
+}
+
+model Incident {
+  id          String           @id @default(uuid())
+  title       String
+  description String?
+  severity    IncidentSeverity
+  status      String           @default("OPEN")
+  rootCause   String?
+  detectedAt  DateTime         @default(now())
+
+  assetId String?
+  asset   Asset?  @relation(fields: [assetId], references: [id])
+
+  @@map("incidents")
+}
+
+model Control {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  framework   String   @default("ISO27001")
+
+  assetEvaluations AssetControl[]
+
+  @@map("controls")
+}
+
+model AssetControl {
+  id              String          @id @default(uuid())
+  assetId         String
+  controlId       String
+  maturity        ControlMaturity @default(INICIAL)
+  effectiveness   Float
+  evaluatedAt     DateTime        @default(now())
+  nextEvaluationAt DateTime?
+
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  control Control @relation(fields: [controlId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, controlId])
+  @@map("asset_controls")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}

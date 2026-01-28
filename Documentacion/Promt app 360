@@ -1,0 +1,271 @@
+Construye una aplicación web FULL-STACK lista para producción llamada:
+
+CyberRisk 360 – Plataforma de Gestión de Riesgo Cibernético
+para una entidad ambiental del Estado colombiano (Parques Nacionales Naturales).
+
+Actúa como Arquitecto Senior de Software, CISO del sector público colombiano
+y experto en GRC con más de 25 años de experiencia.
+Diseña y genera una aplicación completamente funcional, ejecutable localmente,
+orientada a auditoría, control interno, continuidad de la misión ambiental
+y protección de servicios ecosistémicos.
+
+══════════════════════════════════════
+1. CONTEXTO INSTITUCIONAL
+══════════════════════════════════════
+La plataforma será utilizada por una entidad ambiental del orden nacional,
+con presencia territorial en parques, reservas, áreas protegidas y oficinas regionales.
+
+Supuestos obligatorios:
+- La misión ambiental es crítica (conservación, monitoreo, control y atención al ciudadano).
+- Existen entornos desconectados o con conectividad limitada.
+- Hay alta rotación de personal en campo.
+- Se requiere trazabilidad total para entes de control.
+- La seguridad protege información ambiental, científica, operativa y administrativa.
+
+Usuarios principales:
+- Equipo Técnico TI / SOC
+- Oficina de Seguridad de la Información
+- Oficina de Control Interno
+- Dirección Territorial / Nacional
+- Alta Dirección
+
+══════════════════════════════════════
+2. OBJETIVOS DE LA PLATAFORMA
+══════════════════════════════════════
+- Gestionar el riesgo cibernético que afecta la misión ambiental.
+- Proteger sistemas de monitoreo ambiental, SIG, radiocomunicaciones y TIC.
+- Identificar vulnerabilidades críticas en sedes, parques y oficinas regionales.
+- Priorizar mitigaciones con recursos limitados.
+- Soportar auditorías internas, Contraloría y control interno.
+- Traducir riesgo técnico a impacto ambiental y operativo.
+
+══════════════════════════════════════
+3. STACK TECNOLÓGICO (OBLIGATORIO)
+══════════════════════════════════════
+Frontend:
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- Recharts o Chart.js
+- React Query
+- Zustand o Redux Toolkit
+
+Backend:
+- Node.js + TypeScript
+- NestJS (preferido)
+- Prisma ORM
+- PostgreSQL
+- Redis (jobs, alertas, cache)
+
+Seguridad:
+- Autenticación JWT + refresh tokens
+- Control de acceso basado en roles (RBAC)
+- Control por clasificación de la información (ABAC básico)
+- MFA opcional (TOTP)
+- Hash seguro de contraseñas
+- Validación de entradas (OWASP Top 10)
+
+Infraestructura:
+- Docker + Docker Compose
+- Variables de entorno
+- Endpoints /health
+- Logs estructurados (nivel auditoría)
+
+══════════════════════════════════════
+4. ROLES Y SEPARACIÓN DE FUNCIONES
+══════════════════════════════════════
+Roles:
+- ADMIN_TIC
+- ANALISTA_SOC
+- RESPONSABLE_RIESGO
+- AUDITOR_INTERNO
+- DIRECTIVO
+
+Reglas:
+- ADMIN_TIC no puede aprobar evidencias.
+- AUDITOR_INTERNO solo lectura + aprobación + observaciones.
+- DIRECTIVO solo acceso a dashboards ejecutivos.
+- RESPONSABLE_RIESGO responde por riesgos asignados.
+- Toda acción crítica debe quedar en bitácora de auditoría.
+
+══════════════════════════════════════
+5. CLASIFICACIÓN DE LA INFORMACIÓN
+══════════════════════════════════════
+Cada registro debe incluir:
+- clasificacion_informacion: PUBLICA | USO_INTERNO | RESTRINGIDA
+- fundamento_normativo (política, resolución, decreto)
+- tiempo_retencion
+- rol_responsable
+
+El acceso a información RESTRINGIDA debe limitarse por rol y necesidad funcional.
+
+══════════════════════════════════════
+6. MODELO DE DOMINIO (CORE)
+══════════════════════════════════════
+
+6.1 Activos
+- id, nombre
+- tipo (servidor, aplicativo, red, radio, estación, SIG, usuario)
+- criticidad (1–5)
+- CIA: confidencialidad, integridad, disponibilidad (1–5)
+- exposición (internet, interno, campo)
+- entorno (producción, pruebas)
+- sede (área protegida, dirección territorial, nivel central)
+- proceso_misional (monitoreo, control, conservación, atención ciudadana)
+- responsable
+- dependencias
+- etiquetas
+
+6.2 Vulnerabilidades
+- activo_id
+- cve
+- cvss
+- severidad
+- fecha_deteccion
+- fecha_limite_mitigacion
+- overdue (calculado)
+- estado (abierta, mitigada, aceptada)
+- fuente
+- evidencia
+
+6.3 Incidentes
+- tipo (phishing, ransomware, indisponibilidad, fuga información)
+- severidad
+- activo_afectado
+- TTP (MITRE)
+- detección, contención, recuperación
+- impacto_misional (afecta parque, servicio, operación)
+- causa_raiz
+- evidencia
+
+6.4 Controles
+- marco (ISO 27001, NIST, CIS, Lineamientos MinTIC)
+- dominio
+- control_id
+- descripción
+- madurez (0–5)
+- efectividad (%)
+- última_evaluación
+- próxima_evaluación
+- evidencias
+
+══════════════════════════════════════
+7. MOTOR DE RIESGO AMBIENTAL
+══════════════════════════════════════
+Implementar un modelo de riesgo explicable y documentado.
+
+Riesgo Inherente =
+Probabilidad × Impacto
+
+Probabilidad considera:
+- Severidad y volumen de vulnerabilidades
+- Exposición del activo (campo/internet)
+- Historial de incidentes
+- Tendencia de eventos
+- Incumplimiento de SLA
+
+Impacto considera:
+- Criticidad del activo
+- CIA
+- Impacto en procesos misionales
+- Impacto ambiental (operación del parque)
+- Impacto legal y reputacional
+
+Riesgo Residual =
+Riesgo Inherente × (1 − Efectividad de Controles)
+
+Requisitos:
+- Pesos configurables y documentados
+- Cálculo por:
+  - Activo
+  - Proceso misional
+  - Sede / Parque
+  - Entidad
+- Justificación obligatoria para riesgos altos
+- Snapshots periódicos para análisis de tendencia
+
+══════════════════════════════════════
+8. DASHBOARDS
+══════════════════════════════════════
+
+8.1 Dashboard Operativo (SOC / TI)
+- Incidentes activos por severidad
+- Vulnerabilidades por estado y SLA
+- MTTD / MTTR
+- Heatmap: Activo × Severidad
+- Línea de tiempo de incidentes
+- Tabla de riesgos operativos priorizados
+
+8.2 Dashboard de Riesgo Institucional
+- Riesgo por proceso misional
+- Riesgo por parque / sede
+- Top riesgos ambientales-tecnológicos
+- Riesgo inherente vs residual
+- Tendencia histórica
+
+8.3 Dashboard Ejecutivo (Dirección)
+- Nivel global de riesgo (semáforo)
+- Riesgos que afectan la misión ambiental
+- Evolución del riesgo
+- Estado de mitigaciones
+- Exportes para comité directivo
+
+══════════════════════════════════════
+9. ALERTAS Y AUTOMATIZACIÓN
+══════════════════════════════════════
+Alertas:
+- Riesgo alto o creciente
+- Vulnerabilidades críticas vencidas
+- Controles sin evaluar
+- Incidentes con impacto misional
+
+Jobs:
+- Recalcular riesgo
+- Generar snapshots
+- Validar cumplimiento SLA
+
+══════════════════════════════════════
+10. AUDITORÍA Y CONTROL INTERNO
+══════════════════════════════════════
+- Bitácora inmutable:
+  - usuario, rol, acción, fecha, entidad
+- Gestión de evidencias
+- Observaciones de auditoría
+- Exportable para control interno y entes de control
+
+══════════════════════════════════════
+11. UX Y REQUISITOS NO FUNCIONALES
+══════════════════════════════════════
+- Interfaz institucional, sobria y clara
+- Modo claro / oscuro
+- Buscador global
+- Filtros avanzados
+- Paginación y rendimiento
+- Accesibilidad (WCAG AA)
+
+══════════════════════════════════════
+12. ENTREGABLES OBLIGATORIOS
+══════════════════════════════════════
+- Código completo frontend y backend
+- Docker Compose funcional
+- Migraciones de base de datos
+- Datos semilla realistas del sector ambiental
+- README de instalación y uso
+- risk_model.md (modelo de riesgo ambiental)
+- audit_model.md (auditoría y control)
+- Pruebas básicas automatizadas
+
+══════════════════════════════════════
+REGLAS
+══════════════════════════════════════
+- No dejar placeholders que impidan ejecución
+- Todo debe correr localmente con Docker
+- Riesgos y cálculos deben ser explicables
+- Dashboards deben mostrar datos reales
+- Código limpio, modular y documentado
+
+RESULTADO ESPERADO:
+- Plataforma funcional de gestión de riesgo cibernético ambiental
+- Dashboards operativos y ejecutivos activos
+- Modelo de riesgo defendible ante auditoría
+- Soporte real a la misión de conservación ambiental
