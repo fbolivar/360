@@ -1,14 +1,12 @@
 import { PrismaClient } from '@prisma/client'
-import * as dotenv from 'dotenv'
 
-dotenv.config()
-
-if (!process.env.DATABASE_URL) {
-    console.warn("ADVERTENCIA: DATABASE_URL no está definida en process.env");
-}
+// En Next.js, necesitamos un singleton para evitar agotar las conexiones
+// y asegurar que las variables de entorno se carguen correctamente.
 
 const prismaClientSingleton = () => {
-    return new PrismaClient()
+    return new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    })
 }
 
 declare global {
