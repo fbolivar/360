@@ -16,6 +16,7 @@ import {
 
 import { useState } from "react";
 import { AssetCreationModal } from "./AssetCreationModal";
+import Link from "next/link";
 
 export function AssetList() {
     const { assets, loading, fetchAssets } = useAssetStore();
@@ -84,20 +85,33 @@ export function AssetList() {
                                 </div>
 
                                 <div className="flex items-center gap-8">
-                                    <div className="text-center">
-                                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Criticidad</p>
-                                        <div className="flex gap-0.5">
-                                            {[1, 2, 3, 4, 5].map((level) => (
-                                                <div
-                                                    key={level}
-                                                    className={cn(
-                                                        "w-2.5 h-1.5 rounded-full",
-                                                        level <= asset.criticality
-                                                            ? asset.criticality >= 4 ? "bg-rose-500" : "bg-primary"
-                                                            : "bg-muted"
-                                                    )}
-                                                />
-                                            ))}
+                                    <div className="text-right">
+                                        <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Cálculo de Riesgo</p>
+                                        <div className="flex flex-col items-end">
+                                            <span className={cn(
+                                                "text-sm font-black tracking-tight",
+                                                asset.riskLevel === 'CRITICO' ? 'text-rose-500' :
+                                                    asset.riskLevel === 'ALTO' ? 'text-orange-500' :
+                                                        asset.riskLevel === 'MEDIO' ? 'text-amber-500' :
+                                                            'text-emerald-500'
+                                            )}>
+                                                {asset.riskLevel} ({asset.residualRisk})
+                                            </span>
+                                            <div className="flex gap-0.5 mt-1">
+                                                {[1, 2, 3, 4, 5].map((level) => (
+                                                    <div
+                                                        key={level}
+                                                        className={cn(
+                                                            "w-3 h-1 rounded-full",
+                                                            level <= Math.ceil(asset.residualRisk)
+                                                                ? asset.riskLevel === 'CRITICO' ? "bg-rose-500" :
+                                                                    asset.riskLevel === 'ALTO' ? "bg-orange-500" :
+                                                                        asset.riskLevel === 'MEDIO' ? "bg-amber-500" : "bg-emerald-500"
+                                                                : "bg-muted"
+                                                        )}
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -110,9 +124,12 @@ export function AssetList() {
                                                 <AlertTriangle className="w-2.5 h-2.5" /> {asset._count.incidents} Incid
                                             </span>
                                         </div>
-                                        <button className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                                        <Link
+                                            href={`/assets/${asset.id}`}
+                                            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                                        >
                                             Ver detalles <ExternalLink className="w-3 h-3" />
-                                        </button>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>

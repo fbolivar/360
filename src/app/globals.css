@@ -65,3 +65,31 @@
 .glass {
     @apply bg-background/60 backdrop-blur-md border border-white/10;
 }
+
+@media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Ocultar elementos de UI no deseados (ej. Sidebar, Botones flotantes) que no tengan la clase print:block o print:flex */
+    nav,
+    aside,
+    header:not(.print-header),
+    footer:not(.print-footer) {
+        display: none !important;
+    }
+
+    /* Asegurar que el contenedor principal ocupe todo el ancho */
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Evitar cortes de página en tarjetas */
+    .bg-card {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+}

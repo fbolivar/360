@@ -52,6 +52,8 @@ const dataIncidentes = [
 
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
+import { InsightsWidget } from "@/features/intelligence/components/InsightsWidget";
+
 export default function DashboardPage() {
   const { stats, loading, fetchStats } = useDashboardStore();
 
@@ -68,8 +70,21 @@ export default function DashboardPage() {
     activeIncidents: 0,
     highPriorityIncidents: 0,
     recentIncidents: [],
-    avgRisk: 0
+    avgRisk: 0,
+    riskByAssetType: [],
+    history: []
   };
+
+  /* 
+   * Procesamiento de historial real
+   * Si no hay historial, mostramos un punto inicial con el riesgo actual
+   */
+  const historyData = displayStats.history?.length
+    ? displayStats.history.map(h => ({
+      fecha: new Date(h.date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }),
+      valor: Number(h.averageRisk.toFixed(1))
+    }))
+    : [{ fecha: 'Hoy', valor: displayStats.avgRisk }];
 
   return (
     <div className="space-y-10">
@@ -84,6 +99,9 @@ export default function DashboardPage() {
           </span>
         </div>
       </header>
+
+      {/* Intelligent Insights */}
+      <InsightsWidget />
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -121,13 +139,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-card p-8 rounded-xl border">
           <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" /> Riesgo por Proceso Misional (Referencial)
+            <TrendingUp className="w-5 h-5 text-primary" /> Riesgo por Tipo de Activo
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dataRiesgo}>
+              <BarChart data={displayStats.riskByAssetType || []}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={10}
+                  tickFormatter={(val) => val.length > 10 ? `${val.substring(0, 10)}...` : val}
+                />
                 <YAxis stroke="#94a3b8" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b' }}
@@ -145,7 +168,7 @@ export default function DashboardPage() {
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={dataTendencia}>
+              <LineChart data={historyData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
                 <XAxis dataKey="fecha" stroke="#94a3b8" />
                 <YAxis stroke="#94a3b8" />

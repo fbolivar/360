@@ -22,4 +22,5 @@ export interface VulnerabilityStore {
     error: string | null;
     fetchVulnerabilities: () => Promise<void>;
     updateStatus: (id: string, status: VulnerabilityStatus) => Promise<void>;
+    addVulnerability: (formData: any) => Promise<void>;
 }

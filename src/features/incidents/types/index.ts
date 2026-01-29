@@ -16,10 +16,18 @@ export interface Incident {
     } | null;
 }
 
+export interface CreateIncidentData {
+    title: string;
+    description?: string;
+    severity: IncidentSeverity;
+    assetId: string;
+}
+
 export interface IncidentStore {
     incidents: Incident[];
     loading: boolean;
     error: string | null;
     fetchIncidents: () => Promise<void>;
     resolveIncident: (id: string, rootCause: string) => Promise<void>;
+    createIncident: (data: CreateIncidentData) => Promise<void>;
 }

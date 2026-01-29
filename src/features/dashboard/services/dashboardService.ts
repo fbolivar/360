@@ -10,10 +10,11 @@ export async function getDashboardStats() {
         activeIncidents,
         highPriorityIncidents,
         recentIncidents,
-        assetsWithRisk
+        riskMetrics,
+        assetsByType
     ] = await Promise.all([
         prisma.asset.count(),
-        prisma.asset.count({ where: { criticality: 5 } }),
+        prisma.asset.count({ where: { residualRisk: { gt: 4.5 } } }),
         prisma.vulnerability.count({ where: { status: 'ABIERTA' } }),
         prisma.incident.count({ where: { status: 'OPEN' } }),
         prisma.incident.count({ where: { status: 'OPEN', severity: 'CRITICA' } }),
@@ -22,31 +23,38 @@ export async function getDashboardStats() {
             orderBy: { detectedAt: 'desc' },
             include: { asset: true }
         }),
-        prisma.asset.findMany({
-            select: {
-                criticality: true,
-                confidentiality: true,
-                integrity: true,
-                availability: true,
-                _count: {
-                    select: {
-                        vulnerabilities: true,
-                        incidents: true
-                    }
-                }
+        prisma.asset.aggregate({
+            _avg: {
+                residualRisk: true
+            }
+        }),
+        prisma.asset.groupBy({
+            by: ['type'],
+            _avg: {
+                residualRisk: true
             }
         })
     ]);
 
-    // Calcular nivel de riesgo promedio
-    // En un sistema real, usaríamos una fórmula más compleja
-    const totalRiskScore = assetsWithRisk.reduce((acc, asset) => {
-        const baseRisk = (asset.criticality * (asset.confidentiality + asset.integrity + asset.availability)) / 3;
-        const multiplier = 1 + (asset._count.vulnerabilities * 0.1) + (asset._count.incidents * 0.2);
-        return acc + (baseRisk * multiplier);
-    }, 0);
+    const avgRisk = riskMetrics._avg.residualRisk || 0;
 
-    const avgRisk = totalAssets > 0 ? (totalRiskScore / totalAssets).toFixed(1) : "0.0";
+    // Validar y crear snapshot diario si no existe
+    await checkAndCreateDailySnapshot({
+        avgRisk,
+        openIncidents: activeIncidents,
+        criticalAssets
+    });
+
+    // Obtener historial de últimos 6 meses
+    const history = await prisma.riskSnapshot.findMany({
+        take: 6,
+        orderBy: { date: 'asc' }
+    });
+
+    const riskByAssetType = assetsByType.map(item => ({
+        name: item.type,
+        riesgo: Number(((item._avg.residualRisk || 0)).toFixed(1))
+    }));
 
     return {
         totalAssets,
@@ -55,6 +63,34 @@ export async function getDashboardStats() {
         activeIncidents,
         highPriorityIncidents,
         recentIncidents,
-        avgRisk: Number(avgRisk)
+        avgRisk: Number(avgRisk.toFixed(1)),
+        riskByAssetType,
+        history
     };
+}
+
+async function checkAndCreateDailySnapshot(metrics: { avgRisk: number, openIncidents: number, criticalAssets: number }) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const existing = await prisma.riskSnapshot.findFirst({
+        where: {
+            date: {
+                gte: today
+            }
+        }
+    });
+
+    // Si ya existe foto de hoy, no hacemos nada
+    if (existing) return;
+
+    // Si no existe, creamos la foto del dia
+    await prisma.riskSnapshot.create({
+        data: {
+            averageRisk: metrics.avgRisk,
+            openIncidents: metrics.openIncidents,
+            criticalAssets: metrics.criticalAssets,
+            date: new Date() // Guardamos fecha con hora actual
+        }
+    });
 }

@@ -1,8 +1,15 @@
+"use client";
+
 import { ControlList } from "@/features/controls/components/ControlList";
 import { AuditLogViewer } from "@/features/controls/components/AuditLogViewer";
 import { ShieldCheck, History, Gavel } from "lucide-react";
+import { useState } from "react";
+import { NewAuditModal } from "@/features/controls/components/NewAuditModal";
+import { ComplianceSummary } from "@/features/controls/components/ComplianceSummary";
 
 export default function ControlsPage() {
+    const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+
     return (
         <div className="space-y-8 text-foreground">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b pb-8">
@@ -17,7 +24,10 @@ export default function ControlsPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <button className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center gap-2">
+                    <button
+                        onClick={() => setIsAuditModalOpen(true)}
+                        className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all flex items-center gap-2"
+                    >
                         <Gavel className="w-4 h-4" /> Nueva Auditoría
                     </button>
                 </div>
@@ -34,14 +44,14 @@ export default function ControlsPage() {
                     </div>
                     <AuditLogViewer />
 
-                    <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6">
-                        <h5 className="text-sm font-bold mb-2">Resumen de Cumplimiento</h5>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            El sistema detecta una brecha de cumplimiento en el **Anexo A.12** (Seguridad de las Operaciones). Se recomienda re-evaluar los controles en los activos críticos del Pacífico.
-                        </p>
-                    </div>
+                    <ComplianceSummary />
                 </div>
             </div>
+
+            <NewAuditModal
+                isOpen={isAuditModalOpen}
+                onClose={() => setIsAuditModalOpen(false)}
+            />
         </div>
     );
 }

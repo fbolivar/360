@@ -64,8 +64,23 @@ model User {
 
   assetsOwned Asset[]
   auditLogs   AuditLog[]
+  notifications Notification[]
 
   @@map("users")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, WARNING, CRITICAL
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
 }
 
 model Asset {
@@ -83,6 +98,12 @@ model Asset {
   owner           User?               @relation(fields: [ownerId], references: [id])
   
   location        String?
+  
+  // Risk metrics
+  inherentRisk    Float    @default(0)
+  residualRisk    Float    @default(0)
+  avgEffectiveness Float    @default(0)
+  riskLevel       String   @default("BAJO")
 
   vulnerabilities Vulnerability[]
   incidents       Incident[]
@@ -131,10 +152,49 @@ model Control {
   name        String
   description String?
   framework   String   @default("ISO27001")
+  category    String?  // Organizational, Technological, etc.
 
   assetEvaluations AssetControl[]
+  requirements     ControlRequirement[]
 
   @@map("controls")
+}
+
+model Framework {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "ISO 27001:2022"
+  description String?
+  
+  requirements Requirement[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("frameworks")
+}
+
+model Requirement {
+  id          String   @id @default(uuid())
+  code        String   // e.g. "5.1"
+  description String
+  
+  frameworkId String
+  framework   Framework @relation(fields: [frameworkId], references: [id], onDelete: Cascade)
+  
+  controls    ControlRequirement[]
+
+  @@map("requirements")
+}
+
+model ControlRequirement {
+  controlId     String
+  requirementId String
+  
+  control       Control     @relation(fields: [controlId], references: [id], onDelete: Cascade)
+  requirement   Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@id([controlId, requirementId])
+  @@map("control_requirements")
 }
 
 model AssetControl {
@@ -145,6 +205,8 @@ model AssetControl {
   effectiveness   Float
   evaluatedAt     DateTime        @default(now())
   nextEvaluationAt DateTime?
+  evidence        String?
+  comments        String?
 
   asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
   control Control @relation(fields: [controlId], references: [id], onDelete: Cascade)
@@ -165,4 +227,31 @@ model AuditLog {
   user   User?   @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
+}
+
+model RiskSnapshot {
+  id              String   @id @default(uuid())
+  date            DateTime @default(now()) // Se usará solo la parte de fecha
+  averageRisk     Float
+  openIncidents   Int
+  criticalAssets  Int
+
+  createdAt       DateTime @default(now())
+  
+  @@map("risk_snapshots")
+}
+
+model SystemSettings {
+  id              String   @id @default(uuid())
+  companyName     String   @default("Mi Empresa SAS")
+  nit             String?
+  logoUrl         String?
+  
+  // Risk Thresholds (JSON para flexibilidad)
+  // Estructura esperada: { low: 1.5, medium: 3.5, high: 4.5 }
+  riskThresholds  Json?
+
+  updatedAt       DateTime @updatedAt
+
+  @@map("system_settings")
 }

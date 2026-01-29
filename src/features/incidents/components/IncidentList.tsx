@@ -11,17 +11,31 @@ import {
     CheckCircle2,
     History,
     Activity,
-    ArrowUpRight
+    ArrowUpRight,
+    PlusCircle
 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
+import Link from "next/link";
+import { IncidentCreationModal } from "./IncidentCreationModal";
+import { IncidentResolutionModal } from "./IncidentResolutionModal";
 
 export function IncidentList() {
-    const { incidents, loading, fetchIncidents, resolveIncident } = useIncidentStore();
+    const { incidents, loading, fetchIncidents } = useIncidentStore();
     const [activeTab, setActiveTab] = useState<string>("OPEN");
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    // State for resolution modal
+    const [isResolveModalOpen, setIsResolveModalOpen] = useState(false);
+    const [selectedIncident, setSelectedIncident] = useState<{ id: string; title: string } | null>(null);
 
     useEffect(() => {
         fetchIncidents();
     }, [fetchIncidents]);
+
+    const handleOpenResolve = (id: string, title: string) => {
+        setSelectedIncident({ id, title });
+        setIsResolveModalOpen(true);
+    };
 
     const filteredIncidents = incidents.filter(inc => inc.status === activeTab);
 
@@ -29,21 +43,30 @@ export function IncidentList() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-4 border-b border-border/50 pb-1">
-                {["OPEN", "CLOSED"].map((status) => (
-                    <button
-                        key={status}
-                        onClick={() => setActiveTab(status)}
-                        className={cn(
-                            "px-4 py-3 text-sm font-bold transition-all relative",
-                            activeTab === status
-                                ? "text-primary border-b-2 border-primary"
-                                : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        {status === 'OPEN' ? 'Incidentes Activos' : 'Histórico Resuelto'}
-                    </button>
-                ))}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-1">
+                <div className="flex items-center gap-4">
+                    {["OPEN", "CLOSED"].map((status) => (
+                        <button
+                            key={status}
+                            onClick={() => setActiveTab(status)}
+                            className={cn(
+                                "px-4 py-3 text-sm font-bold transition-all relative",
+                                activeTab === status
+                                    ? "text-primary border-b-2 border-primary"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {status === 'OPEN' ? 'Incidentes Activos' : 'Histórico Resuelto'}
+                        </button>
+                    ))}
+                </div>
+
+                <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="flex items-center gap-2 bg-rose-500 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all mb-2 sm:mb-0"
+                >
+                    <PlusCircle className="w-4 h-4" /> Reportar Incidente
+                </button>
             </div>
 
             <div className="grid gap-6">
@@ -53,7 +76,7 @@ export function IncidentList() {
                         <p className="text-muted-foreground font-medium">No hay incidentes registrados en este estado.</p>
                     </div>
                 ) : (
-                    filteredIncidents.map((incident) => (
+                    filteredIncidents.map((incident: any) => (
                         <div key={incident.id} className="relative group overflow-hidden bg-card border rounded-2xl p-6 hover:border-primary/50 transition-all shadow-sm">
                             {/* Accents for high severity */}
                             {incident.severity === 'CRITICA' && (
@@ -101,11 +124,21 @@ export function IncidentList() {
                                             </div>
                                         </div>
                                         <div className="space-y-1 text-right">
-                                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Impacto Misión</p>
-                                            <div className="flex justify-end gap-0.5 mt-1">
-                                                {[1, 2, 3, 4, 5].map(l => (
-                                                    <div key={l} className={cn("w-3 h-1 rounded-full", l <= (incident.asset?.criticality || 1) ? 'bg-primary' : 'bg-muted')} />
-                                                ))}
+                                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Riesgo Activo</p>
+                                            <div className="flex flex-col items-end">
+                                                <span className={cn(
+                                                    "text-[10px] font-black",
+                                                    incident.asset?.riskLevel === 'CRITICO' ? 'text-rose-500' :
+                                                        incident.asset?.riskLevel === 'ALTO' ? 'text-orange-500' :
+                                                            'text-emerald-500'
+                                                )}>
+                                                    {incident.asset?.riskLevel || 'N/A'}
+                                                </span>
+                                                <div className="flex justify-end gap-0.5 mt-1">
+                                                    {[1, 2, 3, 4, 5].map(l => (
+                                                        <div key={l} className={cn("w-3 h-1 rounded-full", l <= (incident.asset?.residualRisk || 1) ? (incident.asset?.riskLevel === 'CRITICO' ? 'bg-rose-500' : 'bg-primary') : 'bg-muted')} />
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -125,7 +158,7 @@ export function IncidentList() {
                                 <div className="lg:w-48 flex flex-col justify-center gap-3">
                                     {incident.status === 'OPEN' ? (
                                         <button
-                                            onClick={() => resolveIncident(incident.id, "Remediación técnica aplicada tras validación SOC.")}
+                                            onClick={() => handleOpenResolve(incident.id, incident.title)}
                                             className="w-full bg-emerald-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                         >
                                             <CheckCircle2 className="w-4 h-4" /> Cerrar Incidente
@@ -135,15 +168,33 @@ export function IncidentList() {
                                             <p className="text-[10px] font-bold uppercase tracking-widest">RESUELTO</p>
                                         </div>
                                     )}
-                                    <button className="w-full bg-secondary text-foreground py-2.5 rounded-xl text-xs font-bold hover:bg-secondary/80 transition-all flex items-center justify-center gap-2">
+                                    <Link
+                                        href={`/incidents/${incident.id}`}
+                                        className="w-full bg-secondary text-foreground py-2.5 rounded-xl text-xs font-bold hover:bg-secondary/80 transition-all flex items-center justify-center gap-2"
+                                    >
                                         Detalles <ArrowUpRight className="w-4 h-4" />
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>
                     ))
                 )}
             </div>
+
+            <IncidentCreationModal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+            />
+
+            <IncidentResolutionModal
+                isOpen={isResolveModalOpen}
+                onClose={() => {
+                    setIsResolveModalOpen(false);
+                    setSelectedIncident(null);
+                }}
+                incidentId={selectedIncident?.id || null}
+                incidentTitle={selectedIncident?.title || null}
+            />
         </div>
     );
 }

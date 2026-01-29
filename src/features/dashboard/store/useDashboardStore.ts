@@ -10,6 +10,8 @@ interface DashboardStore {
         highPriorityIncidents: number;
         recentIncidents: any[];
         avgRisk: number;
+        riskByAssetType: { name: string, riesgo: number }[];
+        history: { date: Date | string, averageRisk: number }[];
     } | null;
     loading: boolean;
     error: string | null;

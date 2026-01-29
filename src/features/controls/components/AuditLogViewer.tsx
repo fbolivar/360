@@ -58,7 +58,7 @@ export function AuditLogViewer() {
                     </div>
                 ))}
                 {logs.length === 0 && (
-                    <div className="p-10 text-center text-muted-foreground text-sm">No se registran logs de auditoría en las últimas 24h.</div>
+                    <div className="p-10 text-center text-muted-foreground text-sm">No se registran logs de auditoría en las últimas 72h.</div>
                 )}
             </div>
         </div>

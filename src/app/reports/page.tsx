@@ -30,6 +30,41 @@ export default function ReportsPage() {
         window.print();
     };
 
+    const handleExport = () => {
+        if (!assets.length) return;
+
+        // Definir cabeceras
+        const headers = ["Nombre Activo", "Tipo", "Ubicación", "Criticidad (1-5)", "Riesgo Inherente", "Riesgo Residual", "Nivel Riesgo", "Vuln. Abiertas"];
+
+        // Mapear datos
+        const csvContent = assets.map(asset => {
+            return [
+                `"${asset.name}"`,
+                `"${asset.type}"`,
+                `"${asset.location || ''}"`,
+                asset.criticality,
+                asset.inherentRisk,
+                asset.residualRisk,
+                asset.riskLevel,
+                asset._count.vulnerabilities
+            ].join(",");
+        });
+
+        // Unir cabeceras y datos
+        const csv = [headers.join(","), ...csvContent].join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+
+        // Crear link de descarga
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `reporte_ciberseguridad_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (!stats) return <div className="p-20 text-center animate-pulse">Generando consolidados...</div>;
 
     return (
@@ -54,7 +89,10 @@ export default function ReportsPage() {
                     >
                         <Printer className="w-4 h-4" /> Imprimir / PDF
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold shadow-lg shadow-primary/20">
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-semibold shadow-lg shadow-primary/20"
+                    >
                         <Download className="w-4 h-4" /> Exportar Datos
                     </button>
                 </div>

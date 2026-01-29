@@ -6,6 +6,7 @@ export interface Control {
     name: string;
     description: string | null;
     framework: string;
+    category?: string | null;
 }
 
 export interface AssetControl {
@@ -16,9 +17,14 @@ export interface AssetControl {
     effectiveness: number;
     evaluatedAt: Date | string;
     nextEvaluationAt: Date | string | null;
+    evidence: string | null;
+    comments: string | null;
     control?: Control;
     asset?: {
+        id: string;
         name: string;
+        riskLevel?: string;
+        residualRisk?: number;
     };
 }
 
@@ -27,6 +33,7 @@ export interface ControlStore {
     controls: Control[];
     loading: boolean;
     error: string | null;
-    fetchData: () => Promise<void>;
-    updateEvaluation: (id: string, maturity: ControlMaturity, effectiveness: number) => Promise<void>;
+    fetchData: (framework?: string) => Promise<void>;
+    updateEvaluation: (id: string, maturity: ControlMaturity, effectiveness: number, evidence?: string, comments?: string) => Promise<void>;
+    createEvaluation: (assetId: string, controlId: string) => Promise<void>;
 }
